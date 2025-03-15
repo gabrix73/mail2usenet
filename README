@@ -76,11 +76,11 @@ python3 -m venv venv
 Activate the virtual environment:
 
 
-Copier
+
 source venv/bin/activate
 Installing Dependencies (PySocks)
 With the virtual environment activated, install PySocks:
 
 
-Copier
+
 pip install pysocks
