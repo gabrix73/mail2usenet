@@ -1,0 +1,86 @@
+# Mail2News Setup
+
+This repository provides a complete setup for converting incoming email messages into Usenet posts using Postfix and a custom Python script (`convert.py`). It also includes a PHP web client (`index.php`) to send posts. Additionally, you can use a standard email client to send posts by directing mail to a Tor hidden service SMTP endpoint.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Postfix Configuration](#postfix-configuration)
+  - [Alias Configuration](#alias-configuration)
+  - [mail2news Process in master.cf](#mail2news-process-in-mastercf)
+  - [2525/smtpd Process in master.cf](#2525smtpd-process-in-mastercf)
+- [Python Environment Setup](#python-environment-setup)
+  - [Creating a Virtual Environment](#creating-a-virtual-environment)
+  - [Installing Dependencies (PySocks)](#installing-dependencies-pysocks)
+- [PHP Web Client (index.php)](#php-web-client-indexphp)
+- [Using an Email Client](#using-an-email-client)
+- [Notes](#notes)
+
+## Overview
+
+This setup enables you to post messages to Usenet by converting emails. The process works as follows:
+
+1. **Postfix** receives the email and, via an alias, pipes it to a custom Python script.
+2. **convert.py** reads the email from standard input, processes it (ensuring proper UTF-8 encoding), and sends it as a Usenet post.
+3. **index.php** is a PHP web client that sends posts using the native `mail()` function.
+4. You can also send posts from any email client by configuring it to use a Tor hidden service SMTP endpoint.
+
+## Postfix Configuration
+
+### Alias Configuration
+
+Edit your `/etc/aliases` file and add the following line to pipe messages to the Python conversion script:
+
+mail2news: |/home/m2usenet/convert.py
+
+
+After editing, run:
+
+```
+sudo newaliases
+mail2news Process in master.cf
+Add the following entry in your Postfix master.cf to define the pipe transport that runs the conversion script:
+
+bash
+Copier
+mail2news  unix  -       n       n       -       -       pipe
+   flags=F user=m2usenet argv=/home/m2usenet/convert.py
+2525/smtpd Process in master.cf
+Add an SMTP listener on port 2525 so that Postfix can accept mail via Tor. For example, add this entry:
+
+perl
+Copier
+2525     inet  n       -       n       -       -       smtpd
+  -o syslog_name=postfix/2525
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=no
+  -o content_filter=mail2news:
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject
+  -o myhostname=ztpat3zvywa3j4firdabdv4tm2lzz4i54rkfw6fj54b6qaw3axg7npad.onion
+Note: Ensure that mynetworks is set appropriately (typically only 127.0.0.1) to prevent abuse.
+
+Python Environment Setup
+Creating a Virtual Environment
+Install the Python venv package (if not already installed):
+
+bash
+Copier
+sudo apt update
+sudo apt install python3-venv
+Create a virtual environment in your project directory:
+
+bash
+Copier
+cd /home/m2usenet
+python3 -m venv venv
+Activate the virtual environment:
+
+bash
+Copier
+source venv/bin/activate
+Installing Dependencies (PySocks)
+With the virtual environment activated, install PySocks:
+
+bash
+Copier
+pip install pysocks
