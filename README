@@ -42,14 +42,14 @@ mail2news Process in master.cf
 Add the following entry in your Postfix master.cf to define the pipe transport that runs the conversion script:
 
 
-Copier
+```
 mail2news  unix  -       n       n       -       -       pipe
    flags=F user=m2usenet argv=/home/m2usenet/convert.py
 2525/smtpd Process in master.cf
 Add an SMTP listener on port 2525 so that Postfix can accept mail via Tor. For example, add this entry:
 
 
-Copier
+```
 2525     inet  n       -       n       -       -       smtpd
   -o syslog_name=postfix/2525
   -o smtpd_tls_security_level=encrypt
@@ -64,13 +64,13 @@ Creating a Virtual Environment
 Install the Python venv package (if not already installed):
 
 
-Copier
+```
 sudo apt update
 sudo apt install python3-venv
 Create a virtual environment in your project directory:
 
 
-Copier
+```
 cd /home/m2usenet
 python3 -m venv venv
 Activate the virtual environment:
