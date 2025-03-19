@@ -44,7 +44,7 @@ def renew_tor_identity():
     try:
         with Controller.from_port(port=9051) as controller:
             # Usa l'autenticazione via cookie; il file cookie è solitamente /var/lib/tor/control_auth_cookie
-            controller.authenticate(cookie_file='/var/lib/tor/control_auth_cookie')
+            controller.authenticate(password='password-in-chiaro-nohash')
             controller.signal(Signal.NEWNYM)
             logging.info("Nuova identità Tor richiesta.")
             sleep(45)  # Attendi il cambio circuito
