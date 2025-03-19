@@ -1,4 +1,4 @@
-# Mail2News Setup
+# Mail2Usenet Setup
 
 This repository provides a complete setup for converting incoming email messages into Usenet posts using Postfix and a custom Python script (`convert.py`). It also includes a PHP web client (`index.php`) to send posts. Additionally, you can use a standard email client to send posts by directing mail to a Tor hidden service SMTP endpoint.
 
