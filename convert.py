@@ -12,7 +12,7 @@ import time
 import random
 
 # Costanti di configurazione
-NNTP_SERVER = 'bofhteamhroxbmd6pxbjrg6egqrnnu2vj7vlxpcnb3ypk56devuyj6yd.onion'
+NNTP_SERVER = 'peannyjkqwqfynd24p6dszvtchkq7hfkwymi5by5y332wmosy5dwfaqd.onion'
 NNTP_PORT = 119  # Connessione in chiaro, senza SSL
 TOR_PROXY = ('127.0.0.1', 9050)
 MAX_POST_SIZE = 10240          # Dimensione massima del post in byte (10 KB)
