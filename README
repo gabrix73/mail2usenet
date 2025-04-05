@@ -1,138 +1,88 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-</head>
-<body>
+- **mail2usenet**  
+  A lightweight gateway project to post messages on Usenet via email or a simple web interface. This gateway implements a **Hashcash-based proof-of-work** system to discourage spam and abuse, requiring a valid *Proof-of-Work Date (UTC)* stamp in every post. It can also operate through a Tor `.onion` address to maintain user privacy and anonymity.  
 
-<h1>mail2usenet</h1>
+  **Features:**  
+  • Posts to Usenet via `IHAVE` or `POST`  
+  • Hashcash **proof-of-work** for anti-spam  
+  • Tor SOCKS5 proxy support (`.onion` address)  
+  • Optional anti-abuse measures (crosspost limit, ±10-minute token validity)  
+  • Secure HTTP/2 deployment with TLS v1.2/v1.3  
 
-<p>
-A lightweight gateway project to post messages on Usenet via email or a simple web interface. This gateway implements a <strong>Hashcash-based proof-of-work</strong> system to discourage spam and abuse, requiring a valid <em>Proof-of-Work Date (UTC)</em> stamp in every post. It can also operate through a Tor <code>.onion</code> address to maintain user privacy and anonymity.
-</p>
+  **Requirements:**  
+  • Python 3 with `venv` (tested on Debian/Ubuntu)  
+  • Apache2 with SSL and PHP (either `mod_php` or PHP-FPM)  
+  • Tor (optional, if you need `.onion` support)  
+  • A NNTP server (e.g., INN in transit mode) to feed articles to Usenet  
 
-<hr>
+  **Installation:**  
+  1. Install system packages on Debian/Ubuntu:  
+     ```bash
+     sudo apt update
+     sudo apt install python3 python3-venv apache2 libapache2-mod-php php
+     ```  
+  2. Create a Python virtual environment:  
+     ```bash
+     python3 -m venv /home/m2usenet/venv
+     source /home/m2usenet/venv/bin/activate
+     pip install --upgrade pip
+     pip install pysocks stem
+     ```  
+     Place your Python script `m2usenet.py` in `/home/m2usenet/` and make it executable (`chmod +x m2usenet.py`).  
+  3. Set up Apache2 with SSL:  
+     ```bash
+     sudo a2enmod ssl headers rewrite
+     sudo systemctl restart apache2
+     ```  
+     (Adjust as needed to enable PHP.)  
+  4. Deploy the web interface:  
+     - Clone or copy `index.php` (and any related assets) into `/var/www/mail2usenet`  
+     - Ensure correct permissions for Apache to serve these files  
+  5. Configure VirtualHost with SSL (example):  
+     ```apache
+     <VirtualHost *:443>
+         ServerName m2usenet.tld
+         DocumentRoot /var/www/mail2usenet
+         SSLEngine on
+         SSLProtocol -all +TLSv1.2 +TLSv1.3
+         SSLCipherSuite    TLSv1.3   TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384
+         SSLCipherSuite    SSL       ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384
+         SSLCertificateFile /etc/letsencrypt/live/m2usenet.tld/fullchain.pem
+         SSLCertificateKeyFile /etc/letsencrypt/live/m2usenet.tld/privkey.pem
+         SSLOpenSSLConfCmd Curves X25519:secp521r1:secp384r1:prime256v1
+         Protocols h2 http/1.1
+         LogLevel warn
+         ErrorLog ${APACHE_LOG_DIR}/m2usenet_error.log
+         CustomLog ${APACHE_LOG_DIR}/m2usenet_access.log anonymized_log
 
-<h2>Features</h2>
-<ul>
-  <li>Posts to Usenet via <code>IHAVE</code> or <code>POST</code></li>
-  <li>Hashcash <strong>proof-of-work</strong> for anti-spam</li>
-  <li>Tor SOCKS5 proxy support (<code>.onion</code> address)</li>
-  <li>Optional anti-abuse measures (crosspost limit, &plusmn;10-minute token validity)</li>
-  <li>Secure HTTP/2 deployment with TLS v1.2/v1.3</li>
-</ul>
+         # Security Headers
+         Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+         Header always set X-Content-Type-Options "nosniff"
+         Header always set X-Frame-Options "DENY"
+         Header always set X-XSS-Protection "1; mode=block"
 
-<hr>
+         <Directory /var/www/mail2usenet/>
+             Options Indexes FollowSymLinks
+             DirectoryIndex index.php
+             AllowOverride none
+             Require all granted
+         </Directory>
+     </VirtualHost>
+     ```
+     Then enable and reload:  
+     ```bash
+     sudo a2ensite m2usenet.conf
+     sudo systemctl reload apache2
+     ```
 
-<h2>Requirements</h2>
-<ul>
-  <li><strong>Python 3</strong> with <code>venv</code> (tested on Debian/Ubuntu)</li>
-  <li><strong>Apache2</strong> with SSL and <code>mod_php</code> (or PHP-FPM)</li>
-  <li><strong>Tor</strong> running locally as a SOCKS5 proxy (optional for onion usage)</li>
-  <li>INN or another NNTP server in <code>transit</code> mode if you want to feed articles to Usenet</li>
-</ul>
+  **Usage:**  
+  • **Proof-of-Work Date**: Each post must include a *UTC timestamp* in `YYYYMMDDHHMM` format. The script generates and verifies a Hashcash token, raising the cost for spammers.  
+  • **Onion Address (optional)**: Run Tor locally to post via a `.onion` address for better privacy.  
+  • **Web or email gateway**: You can configure Postfix (or another MTA) to pipe mail into `m2usenet.py`, or simply use the provided `index.php` form to accept user submissions.  
 
-<hr>
+  **Contributing:**  
+  Feel free to open issues or submit pull requests if you discover bugs or wish to propose new features (especially around anti-spam or proof-of-work improvements).  
 
-<h2>Installation</h2>
+  **License:**  
+  Choose an open-source license (e.g. MIT) if appropriate. Include a full `LICENSE` file in your repository.
 
-<ol>
-  <li><strong>Install system packages</strong>:
-    <pre><code>sudo apt update
-sudo apt install python3 python3-venv apache2 libapache2-mod-php php</code></pre>
-  </li>
-  <li><strong>Create a Python virtual environment</strong>:
-    <pre><code>python3 -m venv /home/m2usenet/venv
-source /home/m2usenet/venv/bin/activate
-pip install --upgrade pip
-pip install pysocks stem # If you want Tor, etc.
-</code></pre>
-    <p>Place your Python script <code>m2usenet.py</code> in <code>/home/m2usenet/</code> and make it executable.</p>
-  </li>
-  <li><strong>Set up Apache2 with PHP</strong>:
-    <pre><code>sudo a2enmod ssl headers rewrite
-sudo a2enconf ssl-params # optional, if you have a custom SSL config
-sudo systemctl restart apache2
-</code></pre>
-  </li>
-  <li><strong>Deploy the web interface</strong>:
-    <ul>
-      <li>Clone or copy <code>index.php</code> (and related files) into <code>/var/www/mail2usenet</code></li>
-      <li>Adjust permissions so that Apache can serve the files</li>
-    </ul>
-  </li>
-  <li><strong>Configure the Apache VirtualHost</strong> for SSL, for example:
-    <pre><code>&lt;VirtualHost *:443&gt;
-    ServerName m2usenet.tld
-    DocumentRoot /var/www/mail2usenet
-    SSLEngine on
-    SSLProtocol -all +TLSv1.2 +TLSv1.3
-    SSLCipherSuite    TLSv1.3   TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384
-    SSLCipherSuite    SSL       ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384
-    SSLCertificateFile /etc/letsencrypt/live/m2usenet.tld/fullchain.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/m2usenet.tld/privkey.pem
-    SSLOpenSSLConfCmd Curves X25519:secp521r1:secp384r1:prime256v1
-    Protocols h2 http/1.1
-    LogLevel warn
-    ErrorLog ${APACHE_LOG_DIR}/m2usenet_error.log
-    CustomLog ${APACHE_LOG_DIR}/m2usenet_access.log anonymized_log
-
-    # Security Headers
-    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set X-Frame-Options "DENY"
-    Header always set X-XSS-Protection "1; mode=block"
-
-    &lt;Directory /var/www/mail2usenet/&gt;
-        Options Indexes FollowSymLinks
-        DirectoryIndex index.php
-        AllowOverride none
-        Require all granted
-    &lt;/Directory&gt;
-&lt;/VirtualHost&gt;
-</code></pre>
-    <p>Enable your new vhost, then reload or restart Apache:
-    <pre><code>sudo a2ensite m2usenet.conf
-sudo systemctl reload apache2
-</code></pre>
-    </p>
-  </li>
-</ol>
-
-<hr>
-
-<h2>Usage</h2>
-<ol>
-  <li><strong>Hashcash / Proof-of-Work Date:</strong> 
-    <p>Every post requires a valid <em>UTC timestamp</em> (e.g. <code>YYYYMMDDHHMM</code>) within &plusmn;10 minutes of the current time. The Python script <code>m2usenet.py</code> will compute a Hashcash token for the provided email address and verify it, raising the computational cost for spammers.</p>
-  </li>
-  <li><strong>Onion Address (Optional):</strong>
-    <p>If you configure <strong>Tor</strong> on the same server, the script can post to your NNTP server’s onion address. This provides additional privacy by hiding your real IP and location.</p>
-  </li>
-  <li><strong>Mail or Web Gateway:</strong> 
-    <p>Users can post messages via:
-      <ul>
-        <li>Email → configured to pipe into <code>m2usenet.py</code></li>
-        <li>Web Form → <code>index.php</code> collects the data and passes it via <code>proc_open</code></li>
-      </ul>
-    </p>
-  </li>
-</ol>
-
-<hr>
-
-<h2>Contributing</h2>
-<p>
-Feel free to open issues or pull requests if you find bugs or have ideas for new features, especially around spam prevention and proof-of-work improvements.
-</p>
-
-<hr>
-
-<h2>License</h2>
-<p>
-This project is licensed under an open-source license (e.g., MIT) – specify your license as appropriate.
-</p>
-
-</body>
-</html>
 
