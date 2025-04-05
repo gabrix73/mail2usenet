@@ -11,7 +11,7 @@ import logging.handlers
 from email.utils import formatdate  # Per header Date in stile RFC 2822
 
 # AUMENTATO DA 16 A 26
-HASHCASH_BITS = 26
+HASHCASH_BITS = 16
 
 NNTP_SERVER = 'peannyjkqwqfynd24p6dszvtchkq7hfkwymi5by5y332wmosy5dwfaqd.onion'
 NNTP_PORT = 119
